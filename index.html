@@ -146,6 +146,14 @@
                 <div id="opensky-map"></div>
             </div>
         </div>
+
+        <div class="section" id="widget-04">
+            <div class="section-title">[04] 💻 GITHUB TRENDING</div>
+            <div class="news-list" id="github-list">
+                <div class="loading">Loading...</div>
+            </div>
+            <div class="updated" id="github-updated"></div>
+        </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -182,6 +190,37 @@
     }
     
     loadNews();
+    loadGithub();
+
+    // ---- GitHub Trending loader ----
+    async function loadGithub() {
+        const list = document.getElementById('github-list');
+        const updated = document.getElementById('github-updated');
+        
+        try {
+            const resp = await fetch('data/github.json');
+            const data = await resp.json();
+            
+            if (!data.items || data.items.length === 0) {
+                list.innerHTML = '<div class="loading">No items</div>';
+                return;
+            }
+            
+            list.innerHTML = data.items.slice(0, 8).map(item => `
+                <div class="news-item">
+                    <a class="news-title" href="${item.link}" target="_blank">${item.title}</a>
+                    <div class="news-meta">
+                        <span class="news-source">${item.author || 'GitHub'}</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            updated.textContent = `Updated: ${data.updated}`;
+        } catch (e) {
+            list.innerHTML = '<div class="loading">Failed to load</div>';
+            console.warn(e);
+        }
+    }
 
     // ---- OpenSky flight tracker ----
     const map = L.map('opensky-map').setView([20, 0], 2);

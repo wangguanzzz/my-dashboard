@@ -16,7 +16,6 @@
         h1 { font-size: 2rem; margin-bottom: 1.5rem; color: #6c5ce7; }
         p { font-size: 1.1rem; color: #888; margin-bottom: 1.5rem; }
 
-        /* 2-column grid for widgets */
         .widget-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -34,7 +33,6 @@
             padding-bottom: 0.5rem;
         }
 
-        /* Webcam widget */
         .webcam-container {
             position: relative;
             width: 100%;
@@ -55,7 +53,21 @@
             color: #555;
         }
 
-        /* News widget */
+        .fr24-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #2a2a4a;
+            background: #0a0a1a;
+        }
+        .fr24-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
         .news-list {
             display: flex;
             flex-direction: column;
@@ -115,6 +127,18 @@
                 <div class="loading">Loading...</div>
             </div>
             <div class="updated" id="news-updated"></div>
+        </div>
+
+        <div class="section" id="widget-03">
+            <div class="section-title">[03] ✈️ FLIGHT TRACKER — FlightRadar24</div>
+            <div class="fr24-container">
+                <iframe 
+                    title="FlightRadar24" 
+                    src="https://www.flightradar24.com/simpleframe/" 
+                    allowfullscreen
+                    loading="lazy">
+                </iframe>
+            </div>
         </div>
     </div>
 

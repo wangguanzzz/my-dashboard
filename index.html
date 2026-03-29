@@ -22,8 +22,8 @@
             border-radius: 12px;
             color: #555;
         }
-        .section { margin-top: 2rem; }
-        .section-title { 
+        .webcam-section { margin-top: 2rem; }
+        .webcam-title { 
             font-size: 0.75rem; 
             text-transform: uppercase; 
             letter-spacing: 0.1em; 
@@ -32,116 +32,43 @@
             border-bottom: 1px solid #222;
             padding-bottom: 0.5rem;
         }
-        .index-card {
-            background: #1a1a2e;
+        .webcam-container {
+            position: relative;
+            width: 100%;
+            max-width: 720px;
+            aspect-ratio: 16/9;
             border-radius: 12px;
-            padding: 1.5rem 2rem;
+            overflow: hidden;
             border: 1px solid #2a2a4a;
-            display: inline-block;
-            min-width: 280px;
+            background: #000;
         }
-        .index-name {
-            font-size: 1.1rem;
-            color: #aaa;
-            margin-bottom: 0.2rem;
+        .webcam-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
         }
-        .index-symbol {
-            font-size: 0.75rem;
-            color: #555;
-            margin-bottom: 1rem;
+        .webcam-label {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: #666;
         }
-        .index-price {
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 0.4rem;
-        }
-        .index-change {
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .positive { color: #00d26a; }
-        .negative { color: #ff4757; }
-        .loading { color: #666; font-style: italic; }
-        .updated { font-size: 0.75rem; color: #444; margin-top: 1rem; }
     </style>
 </head>
 <body>
     <h1>📊 Dashboard</h1>
     <p>Information collection dashboard</p>
 
-    <div class="section">
-        <div class="section-title">📈 NASDAQ COMPOSITE</div>
-        <div class="index-card">
-            <div class="index-name">NASDAQ</div>
-            <div class="index-symbol">^IXIC</div>
-            <div class="index-price" id="price">—</div>
-            <div class="index-change" id="change">
-                <span class="loading">Loading...</span>
-            </div>
+    <div class="webcam-section">
+        <div class="webcam-title">📷 TEHRAN — 德黑兰</div>
+        <div class="webcam-container">
+            <iframe 
+                src="https://www.youtube.com/embed/JboXN7CuKxc?autoplay=1&mute=1" 
+                title="Tehran Live Cam"
+                allowfullscreen
+                loading="lazy">
+            </iframe>
         </div>
-        <div class="updated" id="updated"></div>
+        <div class="webcam-label">Tehran, Iran — Live View</div>
     </div>
-
-    <script>
-    async function fetchNASDAQ() {
-        const priceEl = document.getElementById('price');
-        const changeEl = document.getElementById('change');
-        const updatedEl = document.getElementById('updated');
-
-        try {
-            const resp = await fetch(
-                'https://query1.finance.yahoo.com/v8/finance/chart/%5EIXIC?interval=1d&range=2d',
-                {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                        'Accept': 'application/json',
-                        'Accept-Language': 'en-US,en;q=0.9',
-                    }
-                }
-            );
-            const data = await resp.json();
-            const chart = data.chart?.result?.[0];
-            if (!chart) throw new Error('No data');
-
-            const closes = chart.indicators.quote[0].close;
-            const timestamps = chart.timestamp;
-
-            // Find last valid close
-            let current = null, prev = null;
-            for (let i = closes.length - 1; i >= 0; i--) {
-                if (closes[i] !== null) {
-                    if (current === null) current = closes[i];
-                    else if (prev === null) { prev = closes[i]; break; }
-                }
-            }
-
-            if (current === null) throw new Error('No valid prices');
-
-            const change = current - (prev || current);
-            const changePct = (change / (prev || current)) * 100;
-            const isPositive = change >= 0;
-            const sign = isPositive ? '+' : '';
-            const arrow = isPositive ? '▲' : '▼';
-            const color = isPositive ? 'positive' : 'negative';
-
-            priceEl.textContent = current.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            changeEl.innerHTML = `<span class="${color}">${arrow} ${sign}${Math.abs(change).toFixed(2)} (${sign}${changePct.toFixed(2)}%)</span>`;
-
-            const now = new Date();
-            updatedEl.textContent = `Last updated: ${now.toLocaleTimeString()}`;
-
-        } catch (e) {
-            priceEl.textContent = '—';
-            changeEl.innerHTML = '<span style="color:#ff4757">Failed to load</span>';
-            console.warn('NASDAQ fetch failed:', e);
-        }
-    }
-
-    fetchNASDAQ();
-    setInterval(fetchNASDAQ, 30000); // refresh every 30s
-    </script>
 </body>
 </html>

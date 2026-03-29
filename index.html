@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -53,20 +54,29 @@
             color: #555;
         }
 
-        .fr24-container {
+        .map-container {
             position: relative;
             width: 100%;
-            aspect-ratio: 16/9;
+            height: 280px;
             border-radius: 10px;
             overflow: hidden;
             border: 1px solid #2a2a4a;
             background: #0a0a1a;
         }
-        .fr24-container iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
+        #opensky-map { width: 100%; height: 100%; }
+        .map-overlay {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 1000;
+            background: rgba(15,15,26,0.85);
+            border: 1px solid #2a2a4a;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            color: #666;
         }
+        .map-overlay .count { color: #6c5ce7; font-weight: 600; }
 
         .news-list {
             display: flex;
@@ -130,19 +140,17 @@
         </div>
 
         <div class="section" id="widget-03">
-            <div class="section-title">[03] ✈️ FLIGHT TRACKER — FlightRadar24</div>
-            <div class="fr24-container">
-                <iframe 
-                    title="FlightRadar24" 
-                    src="https://www.flightradar24.com/simpleframe/" 
-                    allowfullscreen
-                    loading="lazy">
-                </iframe>
+            <div class="section-title">[03] ✈️ FLIGHT TRACKER — OpenSky Network</div>
+            <div class="map-container">
+                <div class="map-overlay" id="flight-count">Flights: <span class="count">—</span></div>
+                <div id="opensky-map"></div>
             </div>
         </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+    // ---- News loader ----
     async function loadNews() {
         const list = document.getElementById('news-list');
         const updated = document.getElementById('news-updated');
@@ -174,7 +182,72 @@
     }
     
     loadNews();
-    setInterval(loadNews, 60000);
+
+    // ---- OpenSky flight tracker ----
+    const map = L.map('opensky-map').setView([20, 0], 2);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenSky Network &copy; CARTO',
+        subdomains: 'abcd',
+        maxZoom: 19
+    }).addTo(map);
+
+    // Aircraft icon
+    const planeIcon = L.divIcon({
+        html: '<div style="font-size:14px;filter:hue-rotate(200deg);">✈️</div>',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
+        className: ''
+    });
+
+    let flightMarkers = [];
+
+    async function loadFlights() {
+        try {
+            const resp = await fetch('https://opensky-network.org/api/states/all');
+            if (!resp.ok) return;
+            
+            const data = await resp.json();
+            const states = data.states || [];
+            
+            // Remove old markers
+            flightMarkers.forEach(m => map.removeLayer(m));
+            flightMarkers = [];
+            
+            const countEl = document.querySelector('#flight-count .count');
+            countEl.textContent = states.length;
+
+            states.forEach(state => {
+                if (!state) return;
+                // state: [icao24, callsign, origin_country, time_position, last_contact,
+                //         longitude, latitude, baro_altitude, on_ground, velocity,
+                //         true_track, vertical_rate, sensors, geo_altitude, squawk, spi, position_source]
+                const [icao24, callsign, country, , , lon, lat, altitude, onGround, vel, track] = state;
+                
+                if (lat == null || lon == null) return;
+                
+                const name = (callsign || '').trim() || 'Unknown';
+                const info = `
+                    <strong>${name}</strong><br/>
+                    <small>From: ${country || '—'}</small><br/>
+                    <small>Alt: ${altitude ? Math.round(altitude) + ' ft' : '—'}</small><br/>
+                    <small>Speed: ${vel ? Math.round(vel) + ' kt' : '—'}</small><br/>
+                    <small>Track: ${track ? Math.round(track) + '°' : '—'}</small><br/>
+                    <small>ICAO: ${icao24}</small>
+                `;
+                
+                const marker = L.marker([lat, lon], { icon: planeIcon })
+                    .bindPopup(info)
+                    .addTo(map);
+                
+                flightMarkers.push(marker);
+            });
+        } catch (e) {
+            console.warn('OpenSky fetch failed:', e);
+        }
+    }
+
+    loadFlights();
+    setInterval(loadFlights, 30000); // refresh every 30s
     </script>
 </body>
 </html>

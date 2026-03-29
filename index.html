@@ -45,6 +45,37 @@
             font-size: 0.85rem;
             color: #666;
         }
+        .news-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            max-width: 720px;
+        }
+        .news-item {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            padding: 0.8rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+        .news-title {
+            font-size: 0.9rem;
+            color: #e0e0e0;
+            line-height: 1.4;
+            text-decoration: none;
+        }
+        .news-title:hover { color: #6c5ce7; }
+        .news-meta {
+            font-size: 0.72rem;
+            color: #555;
+            display: flex;
+            gap: 0.8rem;
+        }
+        .news-source { color: #6c5ce7; }
+        .loading { color: #666; font-style: italic; }
+        .updated { font-size: 0.72rem; color: #444; margin-top: 1rem; }
     </style>
 </head>
 <body>
@@ -63,5 +94,48 @@
         </div>
         <div class="webcam-label">Tehran, Iran — Live View</div>
     </div>
+
+    <div class="section">
+        <div class="section-title">[02] 🤖 AI NEWS</div>
+        <div class="news-list" id="news-list">
+            <div class="loading">Loading...</div>
+        </div>
+        <div class="updated" id="updated"></div>
+    </div>
+
+    <script>
+    async function loadNews() {
+        const list = document.getElementById('news-list');
+        const updated = document.getElementById('updated');
+        
+        try {
+            const resp = await fetch('data/ainews.json');
+            const data = await resp.json();
+            
+            if (!data.items || data.items.length === 0) {
+                list.innerHTML = '<div class="loading">No items</div>';
+                return;
+            }
+            
+            list.innerHTML = data.items.map(item => `
+                <div class="news-item">
+                    <a class="news-title" href="${item.link}" target="_blank">${item.title}</a>
+                    <div class="news-meta">
+                        <span class="news-source">${item.source}</span>
+                        <span>${item.published}</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            updated.textContent = `Updated: ${data.updated}`;
+        } catch (e) {
+            list.innerHTML = '<div style="color:#ff4757">Failed to load news</div>';
+            console.warn(e);
+        }
+    }
+    
+    loadNews();
+    setInterval(loadNews, 60000);
+    </script>
 </body>
 </html>
